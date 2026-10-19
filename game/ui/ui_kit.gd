@@ -1,0 +1,446 @@
+class_name UIKit
+extends RefCounted
+## Builders for the game's controls, all styled from Style. Every button gets
+## the same press feedback: a quick squash, a soft click and a haptic tick.
+
+const FONT_PATH: String = "res://assets/fonts/Outfit-Variable.ttf"
+const ICON_DIR: String = "res://assets/icons/"
+const ART_DIR: String = "res://assets/art/"
+
+static var _fonts: Dictionary = {}
+static var _icons: Dictionary = {}
+
+
+## Drops textures drawn in theme colours (switches, slider knobs) after a theme change.
+static func clear_color_caches() -> void:
+	_switches.clear()
+	_knobs.clear()
+
+
+## Drops cached fonts and textures (called on exit so nothing is reported as leaked).
+static func clear_caches() -> void:
+	_fonts.clear()
+	_icons.clear()
+	_switches.clear()
+	_knobs.clear()
+
+
+## Small Noto subsets (SIL OFL) for glyphs Outfit lacks: ★ ♥, currency signs such
+## as ₹ in Google Play prices, and ৳. Without them the web build shows boxes.
+const FALLBACK_FONTS: Array[String] = [
+	"res://assets/fonts/NotoSans-Currency.ttf",
+	"res://assets/fonts/NotoSansSymbols2-Subset.ttf",
+	"res://assets/fonts/NotoSansBengali-Taka.ttf",
+]
+
+
+static func font(weight: int = 400) -> Font:
+	if not _fonts.has(weight):
+		var fv: FontVariation = FontVariation.new()
+		var base: FontFile = load(FONT_PATH) as FontFile
+		if base.fallbacks.is_empty():
+			var chain: Array[Font] = []
+			for path: String in FALLBACK_FONTS:
+				chain.append(load(path) as Font)
+			base.fallbacks = chain
+		fv.base_font = base
+		var ts: TextServer = TextServerManager.get_primary_interface()
+		fv.variation_opentype = {ts.name_to_tag("wght"): weight}
+		_fonts[weight] = fv
+	return _fonts[weight]
+
+
+static func icon(name: String) -> Texture2D:
+	if not _icons.has(name):
+		var path: String = ICON_DIR + name + ".svg"
+		_icons[name] = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	return _icons[name]
+
+
+static func label(text: String, size: int = Style.SIZE_BODY, color: Color = Style.INK, weight: int = 400, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER) -> Label:
+	var l: Label = Label.new()
+	l.text = text
+	l.horizontal_alignment = align
+	l.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	l.add_theme_font_override("font", font(weight))
+	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_color_override("font_color", color)
+	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return l
+
+
+## Wrapping paragraph text.
+static func para(text: String, size: int = Style.SIZE_SMALL, color: Color = Style.MUTED, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER) -> Label:
+	var l: Label = label(text, size, color, 400, align)
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.custom_minimum_size.x = 10
+	return l
+
+
+## Small spaced capitals, e.g. "WORLD 2".
+static func caption(text: String, color: Color = Style.MUTED, size: int = Style.SIZE_CAPTION, align: HorizontalAlignment = HORIZONTAL_ALIGNMENT_CENTER) -> Label:
+	var l: Label = label(text.to_upper(), size, color, 600, align)
+	var fv: FontVariation = (font(600) as FontVariation).duplicate()
+	fv.spacing_glyph = 3
+	l.add_theme_font_override("font", fv)
+	return l
+
+
+static func box(fill: Color, radius: int = Style.RADIUS, border: Color = Color.TRANSPARENT, border_w: int = 0, pad: Vector2 = Vector2(28, 12)) -> StyleBoxFlat:
+	var s: StyleBoxFlat = StyleBoxFlat.new()
+	s.bg_color = fill
+	s.set_corner_radius_all(radius)
+	s.corner_detail = 10
+	s.anti_aliasing = true
+	if border_w > 0:
+		s.border_color = border
+		s.set_border_width_all(border_w)
+	s.content_margin_left = pad.x
+	s.content_margin_right = pad.x
+	s.content_margin_top = pad.y
+	s.content_margin_bottom = pad.y
+	return s
+
+
+static func card_style(radius: int = 40, pad: int = 36) -> StyleBoxFlat:
+	var s: StyleBoxFlat = box(Style.CARD, radius, Style.CARD_EDGE, 2, Vector2(pad, pad))
+	s.shadow_color = Color(0, 0, 0, 0.35)
+	s.shadow_size = 28
+	s.shadow_offset = Vector2(0, 10)
+	return s
+
+
+static func icon_rect(name: String, size: float, color: Color = Style.INK) -> TextureRect:
+	var ic: TextureRect = TextureRect.new()
+	ic.texture = icon(name)
+	ic.custom_minimum_size = Vector2(size, size)
+	ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ic.modulate = color
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return ic
+
+
+## Full-colour game art (coin, key, star, lantern...) from assets/art, drawn
+## untinted. Used for game items; line icons stay for navigation.
+static func art(name: String) -> Texture2D:
+	var key: String = "art/" + name
+	if not _icons.has(key):
+		var path: String = ART_DIR + name + ".svg"
+		_icons[key] = load(path) as Texture2D if ResourceLoader.exists(path) else null
+	return _icons[key]
+
+
+static func art_rect(name: String, size: float) -> TextureRect:
+	var ic: TextureRect = TextureRect.new()
+	ic.texture = art(name)
+	ic.custom_minimum_size = Vector2(size, size)
+	ic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	ic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return ic
+
+
+## A rounded box with a darker "lip" under it, so buttons look pressable.
+## Pressed boxes have a thinner lip and push their content down.
+static func lip_box(fill: Color, radius: int, lip_color: Color, lip: int, pad: Vector2, pressed: bool = false, outline: Color = Color.TRANSPARENT) -> StyleBoxFlat:
+	var s: StyleBoxFlat = box(fill, radius, Color.TRANSPARENT, 0, pad)
+	var l: int = maxi(1, lip / 3) if pressed else lip
+	if outline.a > 0.0:
+		s.border_color = outline
+		s.set_border_width_all(2)
+		s.border_width_bottom = l + 2
+	else:
+		s.border_color = lip_color
+		s.border_width_bottom = l
+	s.content_margin_top = pad.y + (lip - l)
+	s.content_margin_bottom = pad.y
+	s.shadow_color = Color(0, 0, 0, 0.22)
+	s.shadow_size = 0 if pressed else 6
+	s.shadow_offset = Vector2(0, 4)
+	return s
+
+
+## Rounded pill button with a pressable lip. style: "primary" (accent),
+## "soft" (translucent), "ghost" (outline), "danger". `icon_name` may be
+## "art:<name>" for full-colour art.
+static func button(text: String, style: String = "primary", accent: Color = Style.AMBER, height: int = 92, font_size: int = 30, icon_name: String = "") -> Button:
+	var b: Button = Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(0, height)
+	b.focus_mode = Control.FOCUS_ALL
+	b.add_theme_font_override("font", font(700 if style == "primary" else 600))
+	b.add_theme_font_size_override("font_size", font_size)
+	var fill: Color
+	var text_c: Color
+	var lip_c: Color
+	var outline: Color = Color.TRANSPARENT
+	match style:
+		"primary":
+			fill = accent
+			# Dark text on bright fills, white on deep ones (light themes).
+			text_c = Style.PAPER_INK if accent.get_luminance() > 0.42 else Color.WHITE
+			lip_c = accent.darkened(0.35)
+		"danger":
+			fill = Style.ERROR
+			text_c = Color.WHITE
+			lip_c = Style.ERROR.darkened(0.35)
+		"soft":
+			fill = Style.SURFACE
+			text_c = Style.INK
+			lip_c = Style.LIP
+		_:
+			fill = Color(Style.INK, 0.03)
+			text_c = Style.INK
+			lip_c = Color(Style.INK, 0.18)
+			outline = Color(Style.INK, 0.18)
+	var r: int = int(height * 0.36)
+	var lip: int = maxi(4, int(height * 0.07))
+	var pad: Vector2 = Vector2(28, 8)
+	b.add_theme_stylebox_override("normal", lip_box(fill, r, lip_c, lip, pad, false, outline))
+	b.add_theme_stylebox_override("hover", lip_box(fill.lightened(0.07), r, lip_c, lip, pad, false, outline))
+	b.add_theme_stylebox_override("pressed", lip_box(fill.darkened(0.06), r, lip_c, lip, pad, true, outline))
+	b.add_theme_stylebox_override("hover_pressed", lip_box(fill.darkened(0.06), r, lip_c, lip, pad, true, outline))
+	b.add_theme_stylebox_override("disabled", lip_box(Style.PANEL.darkened(0.1), r, Style.LIP, lip, pad))
+	var focus: StyleBoxFlat = box(Color.TRANSPARENT, r + 4, Color(Style.INK, 0.7), 3)
+	focus.set_expand_margin_all(5)
+	b.add_theme_stylebox_override("focus", focus)
+	for key: String in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color", "font_hover_pressed_color"]:
+		b.add_theme_color_override(key, text_c)
+	b.add_theme_color_override("font_disabled_color", Color(Style.INK, 0.35))
+	if not icon_name.is_empty():
+		var is_art: bool = icon_name.begins_with("art:")
+		b.icon = art(icon_name.substr(4)) if is_art else icon(icon_name)
+		b.add_theme_constant_override("icon_max_width", int(font_size * (1.35 if is_art else 1.1)))
+		b.add_theme_constant_override("h_separation", 12)
+		for key: String in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color", "icon_hover_pressed_color"]:
+			b.add_theme_color_override(key, Color.WHITE if is_art else text_c)
+	juice(b)
+	return b
+
+
+## Round icon-only button with a pressable lip (44pt+ touch target).
+## `icon_name` may be "art:<name>" for full-colour art.
+static func icon_button(icon_name: String, size: float = 84.0, fill: Color = Style.SURFACE, tint: Color = Style.INK) -> Button:
+	var b: Button = Button.new()
+	var is_art: bool = icon_name.begins_with("art:")
+	b.icon = art(icon_name.substr(4)) if is_art else icon(icon_name)
+	b.custom_minimum_size = Vector2(size, size)
+	# Never stretch: the same button is the same size on every screen.
+	b.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.expand_icon = true
+	b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	b.focus_mode = Control.FOCUS_ALL
+	var r: int = int(size * 0.36)
+	var lip: int = maxi(4, int(size * 0.07))
+	var pad: Vector2 = Vector2(size * (0.2 if is_art else 0.27), size * (0.2 if is_art else 0.25))
+	var lip_c: Color = Style.LIP
+	b.add_theme_stylebox_override("normal", lip_box(fill, r, lip_c, lip, pad))
+	b.add_theme_stylebox_override("hover", lip_box(fill.lightened(0.07), r, lip_c, lip, pad))
+	b.add_theme_stylebox_override("pressed", lip_box(fill.darkened(0.06), r, lip_c, lip, pad, true))
+	b.add_theme_stylebox_override("hover_pressed", lip_box(fill.darkened(0.06), r, lip_c, lip, pad, true))
+	b.add_theme_stylebox_override("disabled", lip_box(Style.PANEL.darkened(0.1), r, Style.LIP, lip, pad))
+	var focus: StyleBoxFlat = box(Color.TRANSPARENT, r + 4, Color(Style.INK, 0.7), 3, pad)
+	focus.set_expand_margin_all(4)
+	b.add_theme_stylebox_override("focus", focus)
+	for key: String in ["icon_normal_color", "icon_hover_color", "icon_pressed_color", "icon_focus_color", "icon_hover_pressed_color"]:
+		b.add_theme_color_override(key, Color.WHITE if is_art else tint)
+	b.add_theme_color_override("icon_disabled_color", Color(Style.INK, 0.35))
+	juice(b)
+	return b
+
+
+## Press feedback shared by every button.
+static func juice(b: BaseButton) -> void:
+	b.button_down.connect(func() -> void:
+		b.pivot_offset = b.size / 2
+		b.create_tween().tween_property(b, "scale", Vector2(0.95, 0.95), 0.06)
+		Haptics.tick()
+	)
+	b.button_up.connect(func() -> void:
+		b.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT).tween_property(b, "scale", Vector2.ONE, 0.18)
+	)
+	b.pressed.connect(func() -> void: Audio.play("click", 1.0, -6.0))
+
+
+## A vertical gap.
+static func gap(h: float) -> Control:
+	var c: Control = Control.new()
+	c.custom_minimum_size = Vector2(0, h)
+	c.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return c
+
+
+static func hbox(sep: int = 12, align: BoxContainer.AlignmentMode = BoxContainer.ALIGNMENT_CENTER) -> HBoxContainer:
+	var h: HBoxContainer = HBoxContainer.new()
+	h.add_theme_constant_override("separation", sep)
+	h.alignment = align
+	return h
+
+
+static func vbox(sep: int = 12) -> VBoxContainer:
+	var v: VBoxContainer = VBoxContainer.new()
+	v.add_theme_constant_override("separation", sep)
+	return v
+
+
+## A rounded translucent panel holding one child.
+static func panel(child: Control, fill: Color = Style.FIELD, radius: int = 30, pad: Vector2 = Vector2(28, 22)) -> PanelContainer:
+	var p: PanelContainer = PanelContainer.new()
+	p.add_theme_stylebox_override("panel", box(fill, radius, Color.TRANSPARENT, 0, pad))
+	p.add_child(child)
+	return p
+
+
+## A thin rounded progress bar.
+static func progress_bar(ratio: float, color: Color, height: int = 10) -> ProgressBar:
+	var bar: ProgressBar = ProgressBar.new()
+	bar.min_value = 0.0
+	bar.max_value = 1.0
+	bar.value = clampf(ratio, 0.0, 1.0)
+	bar.show_percentage = false
+	bar.custom_minimum_size = Vector2(0, height)
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_theme_stylebox_override("background", box(Color(Style.INK, 0.1), height / 2, Color.TRANSPARENT, 0, Vector2.ZERO))
+	bar.add_theme_stylebox_override("fill", box(color, height / 2, Color.TRANSPARENT, 0, Vector2.ZERO))
+	return bar
+
+
+## An on/off switch row: label on the left, toggle on the right.
+static func toggle_row(text: String, icon_name: String, value: bool, on_change: Callable) -> HBoxContainer:
+	var row: HBoxContainer = hbox(18, BoxContainer.ALIGNMENT_BEGIN)
+	row.add_child(icon_rect(icon_name, 40, Style.MUTED))
+	var l: Label = label(text, Style.SIZE_BODY, Style.INK, 500, HORIZONTAL_ALIGNMENT_LEFT)
+	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(l)
+	var c: CheckButton = CheckButton.new()
+	c.name = text.replace(" ", "")
+	c.button_pressed = value
+	c.custom_minimum_size = Vector2(96, 72)
+	c.focus_mode = Control.FOCUS_ALL
+	c.add_theme_icon_override("checked", _switch_icon(true))
+	c.add_theme_icon_override("unchecked", _switch_icon(false))
+	c.add_theme_icon_override("checked_mirrored", _switch_icon(true))
+	c.add_theme_icon_override("unchecked_mirrored", _switch_icon(false))
+	for st: String in ["normal", "hover", "pressed", "hover_pressed", "focus"]:
+		c.add_theme_stylebox_override(st, StyleBoxEmpty.new())
+	c.toggled.connect(func(on: bool) -> void:
+		Audio.play("click", 1.1 if on else 0.9, -4.0)
+		Haptics.tick()
+		on_change.call(on)
+	)
+	row.add_child(c)
+	return row
+
+
+## A labelled 0..1 volume slider (Music, Sound). Plays a tick while dragging
+## so you hear the level.
+static func slider_row(text: String, icon_name: String, value: float, on_change: Callable, accent: Color = Style.AMBER) -> HBoxContainer:
+	var row: HBoxContainer = hbox(18, BoxContainer.ALIGNMENT_BEGIN)
+	row.custom_minimum_size = Vector2(0, 76)
+	row.add_child(icon_rect(icon_name, 40, Style.MUTED))
+	var l: Label = label(text, Style.SIZE_BODY, Style.INK, 500, HORIZONTAL_ALIGNMENT_LEFT)
+	l.custom_minimum_size = Vector2(110, 0)
+	row.add_child(l)
+	var s: HSlider = HSlider.new()
+	s.name = text.replace(" ", "") + "Slider"
+	s.min_value = 0.0
+	s.max_value = 1.0
+	s.step = 0.05
+	s.value = value
+	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	s.custom_minimum_size = Vector2(0, 48)
+	s.focus_mode = Control.FOCUS_ALL
+	var track: StyleBoxFlat = box(Color(Style.INK, 0.14), 6, Color.TRANSPARENT, 0, Vector2(0, 6))
+	var fill: StyleBoxFlat = box(accent, 6, Color.TRANSPARENT, 0, Vector2(0, 6))
+	s.add_theme_stylebox_override("slider", track)
+	s.add_theme_stylebox_override("grabber_area", fill)
+	s.add_theme_stylebox_override("grabber_area_highlight", fill)
+	s.add_theme_icon_override("grabber", _knob(false, accent))
+	s.add_theme_icon_override("grabber_highlight", _knob(true, accent))
+	s.add_theme_icon_override("grabber_disabled", _knob(false, accent))
+	var pct: Label = label("%d%%" % int(round(value * 100)), Style.SIZE_SMALL, Style.MUTED, 600, HORIZONTAL_ALIGNMENT_RIGHT)
+	pct.custom_minimum_size = Vector2(70, 0)
+	s.value_changed.connect(func(v: float) -> void:
+		pct.text = "%d%%" % int(round(v * 100))
+		on_change.call(v)
+		Audio.play("tap", 1.0 + v * 0.5, -8.0)
+	)
+	row.add_child(s)
+	row.add_child(pct)
+	return row
+
+
+static var _knobs: Dictionary = {}
+
+
+static func _knob(focused: bool, accent: Color) -> Texture2D:
+	var key: String = "%s%s" % [focused, accent.to_html()]
+	if _knobs.has(key):
+		return _knobs[key]
+	var d: int = 44
+	var img: Image = Image.create(d, d, false, Image.FORMAT_RGBA8)
+	var c: Vector2 = Vector2(d, d) * 0.5
+	for y: int in d:
+		for x: int in d:
+			var dist: float = Vector2(x + 0.5, y + 0.5).distance_to(c)
+			var ring: float = clampf(d * 0.5 - dist + 0.5, 0.0, 1.0)
+			var inner: float = clampf(d * 0.5 - 5.0 - dist + 0.5, 0.0, 1.0)
+			var edge: Color = accent if focused else Color(accent, 0.75)
+			img.set_pixel(x, y, Color(edge, edge.a * ring).blend(Color(1, 1, 1, inner)))
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_knobs[key] = tex
+	return tex
+
+
+static var _switches: Dictionary = {}
+
+
+## A pill switch drawn into an image (no extra asset files).
+static func _switch_icon(on: bool) -> Texture2D:
+	if _switches.has(on):
+		return _switches[on]
+	var w: int = 84
+	var h: int = 48
+	var img: Image = Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var track: Color = Style.AMBER if on else Color(Style.INK, 0.18)
+	var knob: Color = Color.WHITE
+	var r: float = h / 2.0
+	var kx: float = w - r if on else r
+	for y: int in h:
+		for x: int in w:
+			var px: Vector2 = Vector2(x + 0.5, y + 0.5)
+			var cx: float = clampf(px.x, r, w - r)
+			var d: float = px.distance_to(Vector2(cx, r))
+			var a: float = clampf(r - d, 0.0, 1.0)
+			var col: Color = Color(track, track.a * a)
+			var dk: float = px.distance_to(Vector2(kx, r))
+			var ka: float = clampf(r - 5.0 - dk, 0.0, 1.0)
+			col = col.blend(Color(knob, ka))
+			img.set_pixel(x, y, col)
+	var tex: ImageTexture = ImageTexture.create_from_image(img)
+	_switches[on] = tex
+	return tex
+
+
+## Coin balance pill; tapping it opens the shop.
+static func coin_chip() -> CounterChip:
+	var c: CounterChip = CounterChip.new("coins")
+	c.pressed.connect(func() -> void: App.instance.go("shop"))
+	return c
+
+
+## Chapter-key balance pill; tapping it opens the chapter key card.
+static func chapter_key_chip() -> CounterChip:
+	var c: CounterChip = CounterChip.new("chapter_keys")
+	c.pressed.connect(func() -> void: App.instance.open(ChapterKeyCard.new()))
+	return c
+
+
+## Level-key balance pill; tapping it opens the key shop.
+static func key_chip() -> CounterChip:
+	var c: CounterChip = CounterChip.new("keys")
+	c.pressed.connect(func() -> void: App.instance.open(KeysCard.new()))
+	return c

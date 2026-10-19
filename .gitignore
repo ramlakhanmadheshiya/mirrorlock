@@ -1,0 +1,10 @@
+.godot/
+.DS_Store
+*.tmp
+build/
+site/
+/android/
+__pycache__/
+plugins_src/mirrorlock_share/build/
+plugins_src/mirrorlock_share/.gradle/
+addons/mirrorlock_share/bin/

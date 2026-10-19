@@ -1,0 +1,52 @@
+{
+	"levels_per_chapter": 40,
+	"unlock_clears": 15,
+	"chapters": [
+		{"id": "reflect", "name": "Reflect", "tagline": "Two halves, one move", "sky_top": "#1B1F4F", "sky_bottom": "#0A0B22", "accent": "#4FE3FF",
+			"idea_title": "Mirror twins", "idea_text": "Every piece has a twin across the glowing line. Tap either one and both slide off together. If either path is blocked, both bump back and you lose a heart.",
+			"gen": {"axes": ["v"], "sizes": [[4, 5], [4, 6], [6, 6], [6, 7], [6, 8], [8, 8], [8, 9], [8, 10]], "groups": [3, 13], "len3_from": 14},
+			"tutorial": {"w": 4, "h": 5, "axis": "v", "pieces": [[1, 2, "L", 2], [2, 2, "R", 2], [0, 4, "U", 1], [3, 4, "U", 1], [1, 0, "U", 1], [2, 0, "U", 1]]}},
+		{"id": "horizon", "name": "Horizon", "tagline": "The mirror lies down", "sky_top": "#2A1B4F", "sky_bottom": "#0D0822", "accent": "#FF7AD9",
+			"idea_title": "A level mirror", "idea_text": "Now the mirror runs across the board. Twins sit above and below it, and up becomes down. Watch the pieces that slide toward the line: twins that meet in the middle crash.",
+			"gen": {"axes": ["h"], "mix_from": 16, "mix_axes": ["v"], "sizes": [[5, 4], [5, 6], [6, 6], [7, 6], [6, 8], [7, 8], [8, 8], [8, 10]], "groups": [3, 13], "len3_from": 12},
+			"tutorial": {"w": 5, "h": 4, "axis": "h", "pieces": [[2, 1, "U", 2], [2, 2, "D", 2], [4, 1, "L", 1], [4, 2, "L", 1], [0, 0, "R", 1], [0, 3, "R", 1]]}},
+		{"id": "stones", "name": "Stones", "tagline": "One side is heavier", "sky_top": "#1F2E3F", "sky_bottom": "#0A1018", "accent": "#FFC857",
+			"idea_title": "Stones", "idea_text": "A stone sits on one side only, so twins no longer see the same board. The number is how many moves it lasts: every move you make chips it, and at zero it crumbles.",
+			"gen": {"idea": "stones", "axes": ["v", "h"], "sizes": [[4, 4], [4, 6], [6, 6], [6, 7], [6, 8], [8, 8], [8, 9], [8, 10]], "groups": [3, 12], "stones": [2, 1, 4], "len3_from": 12},
+			"tutorial": {"w": 4, "h": 4, "axis": "v", "stones": [[0, 1, 1]], "pieces": [[1, 0, "U", 1], [2, 0, "U", 1], [1, 1, "L", 1], [2, 1, "R", 1], [0, 2, "U", 1], [3, 2, "U", 1]]}},
+		{"id": "solo", "name": "Solo", "tagline": "Some pieces walk alone", "sky_top": "#12343A", "sky_bottom": "#061517", "accent": "#5EF2B6",
+			"idea_title": "Lonely pieces", "idea_text": "White pieces have no twin: they move alone, and they only block one side of the mirror. Free them at the right moment to open a path for a pair.",
+			"gen": {"idea": "lonely", "axes": ["v", "h"], "sizes": [[4, 4], [4, 6], [6, 6], [6, 7], [6, 8], [8, 8], [8, 9], [8, 10]], "groups": [3, 13], "lonely": [2, 1, 4], "stones": [21, 1, 2], "len3_from": 12},
+			"tutorial": {"w": 4, "h": 4, "axis": "v", "pieces": [[0, 1, "D", 1], [1, 1, "L", 1], [2, 1, "R", 1], [1, 3, "D", 1], [2, 3, "D", 1]]}},
+		{"id": "slant", "name": "Slant", "tagline": "Corner to corner", "sky_top": "#2E1C46", "sky_bottom": "#10091C", "accent": "#B98CFF",
+			"idea_title": "The diagonal mirror", "idea_text": "The mirror cuts the board from corner to corner. A twin turns a quarter turn: right becomes down and left becomes up. Twins racing toward the line crash where they meet.",
+			"gen": {"axes": ["d"], "sizes": [[5, 5], [6, 6], [7, 7], [8, 8]], "groups": [3, 13], "lonely": [16, 1, 3], "stones": [26, 1, 2], "len3_from": 12},
+			"tutorial": {"w": 4, "h": 4, "axis": "d", "pieces": [[3, 1, "R", 1], [1, 3, "D", 1], [2, 1, "R", 1], [1, 2, "D", 1], [2, 0, "U", 1], [0, 2, "L", 1]]}},
+		{"id": "vault", "name": "Vault", "tagline": "Keys before locks", "sky_top": "#3A2618", "sky_bottom": "#140C07", "accent": "#FFB04F",
+			"idea_title": "Locks and keys", "idea_text": "A locked pair can't move, even with a clear path, until the pair carrying its key has escaped. Find the key, free the way to it, then open the lock.",
+			"gen": {"idea": "locks", "axes": ["v", "h", "d"], "sizes": [[4, 6], [6, 6], [6, 7], [6, 8], [8, 8], [8, 10]], "groups": [4, 13], "locks": [2, 1, 2], "lonely": [16, 1, 2], "stones": [21, 1, 2], "len3_from": 12},
+			"tutorial": {"w": 4, "h": 5, "axis": "v", "pieces": [[1, 0, "U", 1, 0, -1], [2, 0, "U", 1, 0, -1], [0, 3, "U", 1, -1, 0], [3, 3, "U", 1, -1, 0], [1, 2, "L", 2], [2, 2, "R", 2]]}},
+		{"id": "kaleido", "name": "Kaleido", "tagline": "Four of everything", "sky_top": "#3A1636", "sky_bottom": "#150716", "accent": "#FF6FA1",
+			"idea_title": "The kaleidoscope", "idea_text": "Two mirrors at once: every piece has three twins, one in each corner of the board. Tap any of the four and all four move.",
+			"gen": {"axes": ["k"], "sizes": [[6, 6], [6, 8], [8, 8], [8, 10]], "groups": [3, 9], "lonely": [16, 1, 3], "stones": [26, 1, 2], "len3_from": 14},
+			"tutorial": {"w": 4, "h": 4, "axis": "k", "pieces": [[1, 1, "L", 1], [2, 1, "R", 1], [1, 2, "L", 1], [2, 2, "R", 1], [0, 1, "U", 1], [3, 1, "U", 1], [0, 2, "D", 1], [3, 2, "D", 1]]}},
+		{"id": "turn", "name": "Turn", "tagline": "The mirror never sits still", "sky_top": "#142C4A", "sky_bottom": "#060E1C", "accent": "#6FB6FF",
+			"idea_title": "The turning mirror", "idea_text": "After every move the mirror turns a quarter: standing, then lying, then standing again. Twins change with it, and a piece with no twin in the current mirror moves alone. Order matters now: Undo if you get stuck.",
+			"gen": {"axes": ["t"], "sizes": [[4, 4], [6, 6], [6, 6], [6, 6], [8, 8], [8, 8]], "groups": [3, 12], "lonely": [11, 1, 3], "stones": [26, 1, 2], "len3_from": 99},
+			"tutorial": {"w": 4, "h": 4, "axis": "t", "start": "v", "pieces": [[0, 1, "U", 1], [3, 1, "U", 1], [0, 2, "D", 1], [3, 2, "D", 1]]}},
+		{"id": "finale", "name": "Mirrorlock", "tagline": "Every mirror at once", "sky_top": "#2A1238", "sky_bottom": "#08040F", "accent": "#FFE27A",
+			"idea_title": "Everything at once", "idea_text": "The last chapter mixes every mirror and every idea: stones, lonely pieces, locks and keys, the kaleidoscope and the turning mirror. Read the board before you tap.",
+			"gen": {"axes": ["v", "h", "d", "k", "t"], "sizes": [[6, 6], [6, 8], [8, 8], [8, 10]], "groups": [5, 13], "lonely": [1, 1, 3], "stones": [1, 1, 3], "locks": [6, 1, 2], "len3_from": 6}}
+	],
+	"difficulty": {
+		"tiers": [
+			{"name": "Easy", "from": 1, "to": 5},
+			{"name": "Easy–medium", "from": 6, "to": 10},
+			{"name": "Medium", "from": 11, "to": 20},
+			{"name": "Medium–hard", "from": 21, "to": 30},
+			{"name": "Hard", "from": 31, "to": 39},
+			{"name": "Extreme", "from": 40, "to": 40}
+		]
+	},
+	"daily": {"chapters": [0, 1, 2, 3, 4, 5, 6, 7, 8], "weekday_levels": [36, 8, 14, 20, 26, 30, 33], "weekday_names": ["Sunday (hardest)", "Monday (gentlest)", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]}
+}
