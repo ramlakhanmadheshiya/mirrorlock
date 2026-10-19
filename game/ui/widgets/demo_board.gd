@@ -74,8 +74,6 @@ func _tick() -> void:
 	var r: Dictionary = _state.tap(i)
 	if bool(r.get("ok", false)):
 		board.play_exit(r["group"])
-		if is_visible_in_tree():
-			Audio.play("zip", 1.1, -18.0)
 	elif not bool(r.get("ignored", false)):
 		board.play_bump(r["group"], float(r["travel"]), r["obstacles"])
 	_step += 1

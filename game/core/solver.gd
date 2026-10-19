@@ -95,14 +95,15 @@ static func _good_move(rules: MirrorRules, present: int, moves: int, memo: Dicti
 ##   solvable, moves (taps in a solution), pieces, groups (distinct groups at the
 ##   start), depth (rounds when every free group is taken each round),
 ##   blocked (average share of groups that would bump, along a solution),
-##   forced (steps where exactly one tap is safe), traps (average number of
+##   forced (steps where exactly one tap is safe), branching (average number
+##   of safe taps on offer along a solution), traps (average number of
 ##   safe-looking taps that lead to a dead end, turning mirror only),
 ##   dead_ends (reachable stuck positions, turning mirror only), states,
 ##   timing (turning mirror: pieces whose fate flips with the mirror, summed
 ##   along a solution).
 static func analyse(rules: MirrorRules) -> Dictionary:
 	var out: Dictionary = {"solvable": false, "moves": 0, "pieces": rules.count, "groups": 0, "depth": 0,
-		"blocked": 0.0, "forced": 0, "traps": 0.0, "dead_ends": 0, "states": 0, "timing": 0}
+		"blocked": 0.0, "forced": 0, "traps": 0.0, "dead_ends": 0, "states": 0, "timing": 0, "branching": 0.0}
 	out["groups"] = rules.groups_now(rules.full_mask, 0).size()
 	var memo: Dictionary = {}
 	if rules.level.axis == "t":
@@ -128,6 +129,7 @@ static func analyse(rules: MirrorRules) -> Dictionary:
 	var traps_sum: float = 0.0
 	var forced: int = 0
 	var timing: int = 0
+	var free_sum: float = 0.0
 	for step: int in sol:
 		if rules.level.axis == "t":
 			timing += _timing_at(rules, p, m)
@@ -141,6 +143,7 @@ static func analyse(rules: MirrorRules) -> Dictionary:
 				if rules.level.axis != "t" or next == 0 or bool(memo.get(_key(next, m + 1), false)):
 					good += 1
 		blocked_sum += float(gs.size() - free) / float(maxi(1, gs.size()))
+		free_sum += float(free)
 		traps_sum += float(free - good)
 		if good == 1 and gs.size() > 1:
 			forced += 1
@@ -149,6 +152,7 @@ static func analyse(rules: MirrorRules) -> Dictionary:
 	out["blocked"] = blocked_sum / float(maxi(1, sol.size()))
 	out["traps"] = traps_sum / float(maxi(1, sol.size()))
 	out["forced"] = forced
+	out["branching"] = free_sum / float(maxi(1, sol.size()))
 	out["timing"] = timing
 	out["depth"] = _rounds(rules) if rules.level.axis != "t" else int(ceil(sol.size() / 2.0))
 	return out

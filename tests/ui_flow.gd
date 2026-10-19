@@ -538,7 +538,7 @@ func _extras() -> void:
 	var amount: LineEdit = _find(tip, "TipAmount") as LineEdit
 	amount.text = "347"
 	amount.text_changed.emit("347")
-	t.ok((_find(tip, "TipCustom") as Button).text.contains("350"), "a typed amount rounds to the nearest 10")
+	t.ok((_find(tip, "TipCustom") as Button).text.contains(Store.price("tip_350")), "a typed amount rounds to the nearest 10 (in any currency)")
 	_press(tip, "TipPlus")
 	t.eq(amount.text, "360", "+ adds 10")
 	tip.close()

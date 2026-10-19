@@ -33,8 +33,8 @@ func _init() -> void:
 		for lv: MirrorLevel in levels:
 			out.append(lv.to_dict())
 			var a: Dictionary = MirrorSolver.analyse(MirrorRules.new(lv))
-			print("%s  %dx%d %s  pieces=%2d moves=%2d depth=%d blocked=%.2f forced=%d traps=%.2f dead=%d stones=%d locks=%s score=%.2f" % [
-				lv.id, lv.w, lv.h, lv.axis, lv.pieces.size(), a["moves"], a["depth"], a["blocked"], a["forced"], a["traps"], a["dead_ends"], lv.stones.size(), lv.has_locks(), lv.score])
+			print("%s  %dx%d %s  pieces=%2d moves=%2d depth=%d blocked=%.2f branching=%.2f forced=%d traps=%.2f dead=%d stones=%d locks=%s score=%.2f" % [
+				lv.id, lv.w, lv.h, lv.axis, lv.pieces.size(), a["moves"], a["depth"], a["blocked"], a["branching"], a["forced"], a["traps"], a["dead_ends"], lv.stones.size(), lv.has_locks(), lv.score])
 		var f: FileAccess = FileAccess.open(OUT_DIR + ch["id"] + ".json", FileAccess.WRITE)
 		f.store_string(JSON.stringify({"chapter": ch["id"], "levels": out}, "\t", false))
 		f.close()
