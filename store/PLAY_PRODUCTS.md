@@ -24,14 +24,21 @@ creates all of them (see `store/PLAY_CONSOLE.md`).
 | `coins_6000` | Consumable | 6,000 coins | ₹449 / $5.99 |
 | `chapter_keys_1` … `chapter_keys_5` | Consumable | 1–5 chapter keys (₹99 / $1.29 each): each opens a locked chapter at its level 1 | ₹99 × n |
 | `keys_1` … `keys_10` | Consumable | 1–10 level keys (₹30 / $0.49 each, 10% off for 5+) | ₹30 × n |
-| `tip_10` … `tip_1000` (steps of 10) | Consumable | A tip: nothing unlocked (priced in rupees) | ₹10 × n |
+| `tip_10` … `tip_1000` (steps of 10), `tip_1100` … `tip_10000` (steps of 100) | Consumable | A tip: nothing unlocked (priced in rupees; Play shows each player their own currency) | ₹ in the id |
 
-129 products in all. Consumables are consumed after granting, so they can be bought
+219 products in all. Consumables are consumed after granting, so they can be bought
 again. One-time packs are acknowledged and restored on every launch and from
 **Restore purchases**.
 
 Coins buy hints (30 coins, once the 3 free ones each day are used) and an extra heart
 after running out (40 coins).
+
+## Tip ids (190)
+
+Each is a consumable priced at the rupee amount in its id; Google Play converts it for
+other countries, and the game shows each player Play's price in their own currency.
+
+`tip_10`, `tip_20`, `tip_30`, `tip_40`, `tip_50`, `tip_60`, `tip_70`, `tip_80`, `tip_90`, `tip_100`, `tip_110`, `tip_120`, `tip_130`, `tip_140`, `tip_150`, `tip_160`, `tip_170`, `tip_180`, `tip_190`, `tip_200`, `tip_210`, `tip_220`, `tip_230`, `tip_240`, `tip_250`, `tip_260`, `tip_270`, `tip_280`, `tip_290`, `tip_300`, `tip_310`, `tip_320`, `tip_330`, `tip_340`, `tip_350`, `tip_360`, `tip_370`, `tip_380`, `tip_390`, `tip_400`, `tip_410`, `tip_420`, `tip_430`, `tip_440`, `tip_450`, `tip_460`, `tip_470`, `tip_480`, `tip_490`, `tip_500`, `tip_510`, `tip_520`, `tip_530`, `tip_540`, `tip_550`, `tip_560`, `tip_570`, `tip_580`, `tip_590`, `tip_600`, `tip_610`, `tip_620`, `tip_630`, `tip_640`, `tip_650`, `tip_660`, `tip_670`, `tip_680`, `tip_690`, `tip_700`, `tip_710`, `tip_720`, `tip_730`, `tip_740`, `tip_750`, `tip_760`, `tip_770`, `tip_780`, `tip_790`, `tip_800`, `tip_810`, `tip_820`, `tip_830`, `tip_840`, `tip_850`, `tip_860`, `tip_870`, `tip_880`, `tip_890`, `tip_900`, `tip_910`, `tip_920`, `tip_930`, `tip_940`, `tip_950`, `tip_960`, `tip_970`, `tip_980`, `tip_990`, `tip_1000`, `tip_1100`, `tip_1200`, `tip_1300`, `tip_1400`, `tip_1500`, `tip_1600`, `tip_1700`, `tip_1800`, `tip_1900`, `tip_2000`, `tip_2100`, `tip_2200`, `tip_2300`, `tip_2400`, `tip_2500`, `tip_2600`, `tip_2700`, `tip_2800`, `tip_2900`, `tip_3000`, `tip_3100`, `tip_3200`, `tip_3300`, `tip_3400`, `tip_3500`, `tip_3600`, `tip_3700`, `tip_3800`, `tip_3900`, `tip_4000`, `tip_4100`, `tip_4200`, `tip_4300`, `tip_4400`, `tip_4500`, `tip_4600`, `tip_4700`, `tip_4800`, `tip_4900`, `tip_5000`, `tip_5100`, `tip_5200`, `tip_5300`, `tip_5400`, `tip_5500`, `tip_5600`, `tip_5700`, `tip_5800`, `tip_5900`, `tip_6000`, `tip_6100`, `tip_6200`, `tip_6300`, `tip_6400`, `tip_6500`, `tip_6600`, `tip_6700`, `tip_6800`, `tip_6900`, `tip_7000`, `tip_7100`, `tip_7200`, `tip_7300`, `tip_7400`, `tip_7500`, `tip_7600`, `tip_7700`, `tip_7800`, `tip_7900`, `tip_8000`, `tip_8100`, `tip_8200`, `tip_8300`, `tip_8400`, `tip_8500`, `tip_8600`, `tip_8700`, `tip_8800`, `tip_8900`, `tip_9000`, `tip_9100`, `tip_9200`, `tip_9300`, `tip_9400`, `tip_9500`, `tip_9600`, `tip_9700`, `tip_9800`, `tip_9900`, `tip_10000`
 
 ## Ads (AdMob)
 

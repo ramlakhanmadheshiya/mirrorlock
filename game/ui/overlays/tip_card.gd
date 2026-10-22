@@ -1,12 +1,17 @@
 class_name TipCard
 extends Overlay
-## The tip jar, like Single Shot's: four quick amounts, or type your own.
-## − / + step by 10, and a typed amount rounds to the nearest 10 (Google Play
-## sells fixed prices, so each amount is its own product).
+## The tip jar, like Single Shot's: four quick amounts, or pick your own with
+## − / + and a slider. Every amount is its own Google Play product (see
+## Store.tip_amounts()), and every price shown is the player's local price from
+## Store.price(), so the picker works the same in any currency.
 
 var _status: Label
-var _amount: LineEdit
+var _price: Label
+var _slider: HSlider
 var _custom: Button
+var _presets: Dictionary = {}
+## Index into Store.tip_amounts() of the selected tip.
+var _index: int = 0
 
 
 func build() -> void:
@@ -18,62 +23,44 @@ func build() -> void:
 	grid.add_theme_constant_override("h_separation", 14)
 	grid.add_theme_constant_override("v_separation", 14)
 	body.add_child(grid)
-	for rupees: int in Store.TIP_PRESETS:
-		var b: Button = UIKit.button(Store.price("tip_%d" % rupees), "soft", Style.AMBER, 84, 28)
-		b.name = "Tip_%d" % rupees
+	for amount: int in Store.TIP_PRESETS:
+		var b: Button = UIKit.button(Store.price("tip_%d" % amount), "soft", Style.AMBER, 84, 28)
+		b.name = "Tip_%d" % amount
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.pressed.connect(func() -> void: _tip(rupees))
+		b.pressed.connect(func() -> void: _tip(amount))
 		grid.add_child(b)
-	body.add_child(UIKit.caption("Or your own amount"))
+		_presets[amount] = b
+	body.add_child(UIKit.caption("Or pick your own"))
 	var row: HBoxContainer = UIKit.hbox(14)
 	var minus: Button = UIKit.icon_button("minus", 68)
 	minus.name = "TipMinus"
-	minus.pressed.connect(func() -> void: _nudge(-Store.TIP_STEP))
+	minus.pressed.connect(func() -> void: _select(_index - 1))
 	row.add_child(minus)
-	_amount = LineEdit.new()
-	_amount.name = "TipAmount"
-	_amount.text = "500"
-	_amount.alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_amount.custom_minimum_size = Vector2(220, 76)
-	_amount.virtual_keyboard_type = LineEdit.KEYBOARD_TYPE_NUMBER
-	_amount.max_length = 4
-	_amount.add_theme_font_override("font", UIKit.font(600))
-	_amount.add_theme_font_size_override("font_size", 34)
-	_amount.add_theme_color_override("font_color", Style.INK)
-	_amount.add_theme_color_override("caret_color", Style.AMBER)
-	var box: StyleBoxFlat = UIKit.box(Style.FIELD, 36, Color(Style.INK, 0.15), 2, Vector2(18, 6))
-	_amount.add_theme_stylebox_override("normal", box)
-	var focus: StyleBoxFlat = box.duplicate()
-	focus.border_color = Style.AMBER
-	_amount.add_theme_stylebox_override("focus", focus)
-	_amount.text_changed.connect(func(t: String) -> void:
-		# Digits only.
-		var digits: String = ""
-		for ch: String in t:
-			if ch >= "0" and ch <= "9":
-				digits += ch
-		if digits != t:
-			_amount.text = digits
-			_amount.caret_column = digits.length()
-		_refresh_custom()
-	)
-	_amount.text_submitted.connect(func(_t: String) -> void:
-		_amount.text = str(_value())
-		_refresh_custom()
-	)
-	row.add_child(_amount)
+	_price = UIKit.label("", 34, Style.INK, 600)
+	_price.name = "TipPrice"
+	_price.custom_minimum_size = Vector2(220, 76)
+	row.add_child(_price)
 	var plus: Button = UIKit.icon_button("plus", 68)
 	plus.name = "TipPlus"
-	plus.pressed.connect(func() -> void: _nudge(Store.TIP_STEP))
+	plus.pressed.connect(func() -> void: _select(_index + 1))
 	row.add_child(plus)
 	body.add_child(row)
+	_slider = UIKit.bar_slider(Style.AMBER)
+	_slider.name = "TipSlider"
+	_slider.min_value = 0
+	_slider.max_value = Store.tip_amounts().size() - 1
+	_slider.step = 1
+	_slider.value_changed.connect(func(v: float) -> void:
+		if int(v) != _index:
+			_select(int(v))
+			Audio.play("tap", 1.0 + v / _slider.max_value * 0.5, -8.0)
+	)
+	body.add_child(_slider)
 	_custom = UIKit.button("", "primary", Style.AMBER, 88, 28, "art:heart")
 	_custom.name = "TipCustom"
-	_custom.pressed.connect(func() -> void:
-		_amount.text = str(_value())
-		_tip(_value())
-	)
+	_custom.pressed.connect(func() -> void: _tip(selected()))
 	body.add_child(_custom)
+	body.add_child(UIKit.refund_note())
 	_status = UIKit.para(_thanks(), Style.SIZE_SMALL, Style.AMBER)
 	_status.name = "Status"
 	body.add_child(_status)
@@ -83,34 +70,34 @@ func build() -> void:
 			if ok:
 				Audio.play("unlock", 1.0, -3.0)
 	)
-	_refresh_custom()
+	Store.price_updated.connect(func(_id: String, _p: String) -> void: _refresh())
+	_select(maxi(0, Store.tip_amounts().find(Store.TIP_DEFAULT)))
 
 
-## The typed amount, rounded to the nearest 10 and kept in range.
-func _value() -> int:
-	var raw: int = _amount.text.to_int()
-	var r: int = int(round(float(raw) / float(Store.TIP_STEP))) * Store.TIP_STEP
-	return clampi(r, Store.TIP_MIN, Store.TIP_MAX)
+## The selected tip amount (the rupee value in its product id).
+func selected() -> int:
+	return int(Store.tip_amounts()[_index])
 
 
-func _nudge(by: int) -> void:
-	_amount.text = str(clampi(_value() + by, Store.TIP_MIN, Store.TIP_MAX))
-	_refresh_custom()
+func _select(i: int) -> void:
+	_index = clampi(i, 0, Store.tip_amounts().size() - 1)
+	_slider.set_value_no_signal(_index)
+	_refresh()
 
 
-func _refresh_custom() -> void:
-	var v: int = _value()
-	_custom.text = "Tip %s" % Store.price("tip_%d" % v)
-	var typed: int = _amount.text.to_int()
-	if typed > 0 and typed != v:
-		_status.text = "Google Play takes amounts in steps of %d, so that's %s" % [Store.TIP_STEP, Store.price("tip_%d" % v)]
-	elif _status != null and _status.text.begins_with("Google Play takes"):
-		_status.text = _thanks()
+func _refresh() -> void:
+	if _custom == null:
+		return
+	var p: String = Store.price("tip_%d" % selected())
+	_price.text = p
+	_custom.text = "Tip %s" % p
+	for amount: int in _presets:
+		(_presets[amount] as Button).text = Store.price("tip_%d" % amount)
 
 
-func _tip(rupees: int) -> void:
+func _tip(amount: int) -> void:
 	_status.text = "Opening Google Play…"
-	Store.buy("tip_%d" % rupees)
+	Store.buy("tip_%d" % amount)
 
 
 func _thanks() -> String:

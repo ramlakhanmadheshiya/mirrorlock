@@ -334,21 +334,9 @@ static func toggle_row(text: String, icon_name: String, value: bool, on_change: 
 	return row
 
 
-## A labelled 0..1 volume slider (Music, Sound). Plays a tick while dragging
-## so you hear the level.
-static func slider_row(text: String, icon_name: String, value: float, on_change: Callable, accent: Color = Style.AMBER) -> HBoxContainer:
-	var row: HBoxContainer = hbox(18, BoxContainer.ALIGNMENT_BEGIN)
-	row.custom_minimum_size = Vector2(0, 76)
-	row.add_child(icon_rect(icon_name, 40, Style.MUTED))
-	var l: Label = label(text, Style.SIZE_BODY, Style.INK, 500, HORIZONTAL_ALIGNMENT_LEFT)
-	l.custom_minimum_size = Vector2(110, 0)
-	row.add_child(l)
+## An HSlider in the app's look: a soft track, an accent fill and a round knob.
+static func bar_slider(accent: Color = Style.AMBER) -> HSlider:
 	var s: HSlider = HSlider.new()
-	s.name = text.replace(" ", "") + "Slider"
-	s.min_value = 0.0
-	s.max_value = 1.0
-	s.step = 0.05
-	s.value = value
 	s.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	s.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	s.custom_minimum_size = Vector2(0, 48)
@@ -361,6 +349,34 @@ static func slider_row(text: String, icon_name: String, value: float, on_change:
 	s.add_theme_icon_override("grabber", _knob(false, accent))
 	s.add_theme_icon_override("grabber_highlight", _knob(true, accent))
 	s.add_theme_icon_override("grabber_disabled", _knob(false, accent))
+	return s
+
+
+const REFUND_NOTE: String = "Purchases are made through Google Play. Sorry, we can't refund or undo a purchase."
+
+
+## The small "no refunds" line shown on the shop and every buy card.
+static func refund_note() -> Label:
+	var l: Label = para(REFUND_NOTE, Style.SIZE_CAPTION, Style.MUTED)
+	l.name = "RefundNote"
+	return l
+
+
+## A labelled 0..1 volume slider (Music, Sound). Plays a tick while dragging
+## so you hear the level.
+static func slider_row(text: String, icon_name: String, value: float, on_change: Callable, accent: Color = Style.AMBER) -> HBoxContainer:
+	var row: HBoxContainer = hbox(18, BoxContainer.ALIGNMENT_BEGIN)
+	row.custom_minimum_size = Vector2(0, 76)
+	row.add_child(icon_rect(icon_name, 40, Style.MUTED))
+	var l: Label = label(text, Style.SIZE_BODY, Style.INK, 500, HORIZONTAL_ALIGNMENT_LEFT)
+	l.custom_minimum_size = Vector2(110, 0)
+	row.add_child(l)
+	var s: HSlider = bar_slider(accent)
+	s.name = text.replace(" ", "") + "Slider"
+	s.min_value = 0.0
+	s.max_value = 1.0
+	s.step = 0.05
+	s.value = value
 	var pct: Label = label("%d%%" % int(round(value * 100)), Style.SIZE_SMALL, Style.MUTED, 600, HORIZONTAL_ALIGNMENT_RIGHT)
 	pct.custom_minimum_size = Vector2(70, 0)
 	s.value_changed.connect(func(v: float) -> void:

@@ -335,6 +335,7 @@ func _shop() -> void:
 	await _wait(0.5)
 	var coin_card: Overlay = app.top_overlay()
 	t.ok(coin_card is CoinsCard, "the Coins row opens its card")
+	t.ok(_find(coin_card, "RefundNote") != null, "the coins card shows the no-refunds line")
 	var coins: int = Profile.coins()
 	_press(coin_card, "Buy_coins_300")
 	await _wait(0.2)
@@ -348,6 +349,7 @@ func _shop() -> void:
 	await _wait(0.5)
 	var card: Overlay = app.top_overlay()
 	t.ok(card is ProductCard, "a pack opens its card")
+	t.ok(_find(card, "RefundNote") != null, "the pack card shows the no-refunds line")
 	_press(card, "Trial")
 	await _wait(0.6)
 	t.ok(Profile.owns("style_pack") and not Profile.bought("style_pack"), "the video starts a trial")
@@ -529,18 +531,42 @@ func _extras() -> void:
 	await _wait(1.0)
 	t.ok(Style.DARK, "Dark brings the night look back")
 	app.close_overlays()
-	# Tip jar: type any amount; − / + step by 10.
+	# Tip jar: − / + and a slider through every tip product, local prices.
 	app.go("shop")
 	await _wait(0.7)
+	t.ok(_find(app.screen, "RefundNote") != null, "the shop shows the no-refunds line")
+	t.eq((_find(app.screen, "RefundNote") as Label).text, UIKit.REFUND_NOTE, "with the exact wording")
 	_press(app.screen, "TipJar")
 	await _wait(0.5)
 	var tip: Overlay = app.top_overlay()
-	var amount: LineEdit = _find(tip, "TipAmount") as LineEdit
-	amount.text = "347"
-	amount.text_changed.emit("347")
-	t.ok((_find(tip, "TipCustom") as Button).text.contains(Store.price("tip_350")), "a typed amount rounds to the nearest 10 (in any currency)")
+	t.ok(_find(tip, "RefundNote") != null, "the tip jar shows the no-refunds line")
+	t.ok(_find(tip, "TipAmount") == null, "no typed amount in rupees")
+	var tip_price: Label = _find(tip, "TipPrice") as Label
+	var tip_slider: HSlider = _find(tip, "TipSlider") as HSlider
+	var tip_btn: Button = _find(tip, "TipCustom") as Button
+	t.ok(tip_price != null and tip_slider != null, "the tip jar has a price label and a slider")
+	t.eq(tip_price.text, Store.price("tip_500"), "the picker starts on the ₹500 tip, in local currency")
+	t.eq(tip_btn.text, "Tip %s" % Store.price("tip_500"), "the big button shows the local price")
 	_press(tip, "TipPlus")
-	t.eq(amount.text, "360", "+ adds 10")
+	t.eq(tip_price.text, Store.price("tip_510"), "+ moves to the next tip")
+	_press(tip, "TipMinus")
+	_press(tip, "TipMinus")
+	t.eq(tip_price.text, Store.price("tip_490"), "− moves to the one before")
+	t.eq(int(tip_slider.max_value), Store.tip_amounts().size() - 1, "the slider covers every tip")
+	tip_slider.value = tip_slider.max_value
+	t.eq(tip_btn.text, "Tip %s" % Store.price("tip_10000"), "the slider reaches the ₹10,000 tip")
+	_press(tip, "TipPlus")
+	t.eq(tip_btn.text, "Tip %s" % Store.price("tip_10000"), "+ stops at the largest tip")
+	tip_slider.value = 0
+	t.eq(tip_btn.text, "Tip %s" % Store.price("tip_10"), "the slider reaches the ₹10 tip")
+	_press(tip, "TipMinus")
+	t.eq(tip_price.text, Store.price("tip_10"), "− stops at the smallest tip")
+	var old_price: String = Store.prices["tip_10"]
+	Store.prices["tip_10"] = "US$0.12"
+	Store.price_updated.emit("tip_10", "US$0.12")
+	t.eq(tip_price.text, "US$0.12", "Play's price replaces the fallback live")
+	Store.prices["tip_10"] = old_price
+	Store.price_updated.emit("tip_10", old_price)
 	tip.close()
 	await _wait(0.3)
 	# Chapter keys: 1 to 5 at a time.

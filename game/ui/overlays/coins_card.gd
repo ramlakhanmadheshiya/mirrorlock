@@ -22,6 +22,7 @@ func build() -> void:
 	_status = UIKit.para("", Style.SIZE_SMALL, Style.MUTED)
 	_status.name = "Status"
 	body.add_child(_status)
+	body.add_child(UIKit.refund_note())
 	Store.purchase_finished.connect(func(ok: bool, msg: String, _id: String) -> void:
 		if is_inside_tree():
 			_status.text = msg

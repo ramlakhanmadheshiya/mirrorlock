@@ -61,6 +61,7 @@ func build() -> void:
 		Store.buy(product)
 	)
 	body.add_child(_buy)
+	body.add_child(UIKit.refund_note())
 	if bool(info.get("trial", false)) and not Profile.bought(product):
 		_trial = UIKit.button("Try it free for 1 hour with a video", "soft", Style.AMBER, 84, 23, "art:watch")
 		_trial.name = "Trial"

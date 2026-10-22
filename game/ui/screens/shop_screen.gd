@@ -43,6 +43,7 @@ func build() -> void:
 	)
 	list.add_child(restore)
 	list.add_child(UIKit.para("One-time purchases through Google Play. No subscriptions.", Style.SIZE_CAPTION))
+	list.add_child(UIKit.refund_note())
 	list.add_child(UIKit.gap(20))
 	Store.restore_finished.connect(func(_ok: bool, msg: String) -> void: _show_status(msg))
 	Store.purchase_finished.connect(func(ok: bool, msg: String, _id: String) -> void:

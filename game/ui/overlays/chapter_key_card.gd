@@ -53,6 +53,7 @@ func build() -> void:
 		Store.buy("chapter_keys_%d" % _count)
 	)
 	body.add_child(_buy)
+	body.add_child(UIKit.refund_note())
 	_video = UIKit.button("", "soft", Style.AMBER, 84, 23, "art:watch")
 	_video.name = "VideoChapterKey"
 	_video.pressed.connect(_watch)
